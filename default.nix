@@ -1,26 +1,36 @@
-{ pkgs ? import <nixpkgs> {} }:
+{
+  pkgs,
+  cargoDotNix ? ./Cargo.nix,
+  ...
+}:
+let
+  cargoNix = import cargoDotNix {
+    inherit pkgs;
+    buildRustCrateForPkgs =
+      pkgs:
+      pkgs.buildRustCrate.override {
+        defaultCrateOverrides = pkgs.defaultCrateOverrides // {
+          vncserver = attrs: {
+            nativeBuildInputs = (attrs.nativeBuildInputs or []) ++ (with pkgs; [
+              pkg-config
+            ]);
 
-pkgs.stdenv.mkDerivation rec {
-  name = "dev-shell";
+            buildInputs = (attrs.buildInputs or []) ++ (with pkgs; [
+              libvncserver
+              libvncserver.dev
+            ]);
+          };
+        };
+        rustc = pkgs.rust-toolchain;
+        cargo = pkgs.rust-toolchain;
+      };
+  };
 
-  buildInputs = with pkgs; [
-    pkg-config
-    clang
-    libclang
-    libvncserver
-    libvncserver.dev
+  workspace = cargoNix.workspaceMembers;
 
-    # Needed for native-display feature
-    wayland
-    libGL
-    libxkbcommon
-  ];
-
-  LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
-  LIBVNCSERVER_HEADER_FILE = "${pkgs.libvncserver.dev}/include/rfb/rfb.h";
-
-  # Needed for native-display feature
-  WINIT_UNIX_BACKEND = "wayland";
-  LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath buildInputs}";
-  XDG_DATA_DIRS = builtins.getEnv "XDG_DATA_DIRS";
+  breakwater = workspace.breakwater.build;
+in 
+{
+  breakwater-egui = breakwater.override { features = ["egui"];  };
+  breakwater-vnc = breakwater.override { features = ["vnc"];  };
 }

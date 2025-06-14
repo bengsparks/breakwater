@@ -15,7 +15,6 @@ COPY breakwater-parser-c-bindings/ breakwater-parser-c-bindings/
 COPY Cargo.toml .
 COPY Cargo.lock .
 COPY rust-toolchain.toml .
-COPY Arial.ttf .
 
 # We don't want to e.g. set "-C target-cpu=native", so that the binary should run everywhere
 # Also we can always build with vnc server support as the docker image contains all needed dependencies in any case
