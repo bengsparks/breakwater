@@ -11,6 +11,7 @@ WORKDIR /breakwater
 COPY breakwater-parser/ breakwater-parser/
 COPY breakwater-egui-overlay/ breakwater-egui-overlay/
 COPY breakwater/ breakwater/
+COPY breakwater-parser-c-bindings/ breakwater-parser-c-bindings/
 COPY Cargo.toml .
 COPY Cargo.lock .
 COPY rust-toolchain.toml .
