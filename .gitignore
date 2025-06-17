@@ -3,3 +3,5 @@
 .vscode/
 statistics.json
 /pixelflut/
+.direnv/
+result

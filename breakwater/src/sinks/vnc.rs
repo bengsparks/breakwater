@@ -56,7 +56,7 @@ impl<FB: FrameBuffer + Sync + Send> DisplaySink<FB> for VncSink<'_, FB> {
         let font = match cli_args.font.as_str() {
             // We ship our own copy of Arial.ttf, so that users don't need to download and provide it
             "Arial.ttf" => {
-                let font_bytes = include_bytes!("../../../Arial.ttf");
+                let font_bytes = include_bytes!("../../Arial.ttf");
                 Font::try_from_bytes(font_bytes).context("failed to load default font")?
             }
             _ => {
