@@ -3,7 +3,8 @@ members = [
     "breakwater-parser",
     "breakwater",
     "breakwater-egui-overlay",
-    "breakwater-parser-c-bindings"
+    "breakwater-parser-c-bindings",
+    "breakwater-socket2"
 ]
 resolver = "2"
 
@@ -65,3 +66,4 @@ codegen-units = 1
 # https://github.com/rayylee/libvnc-rs/pull/2: Update bindgen to 0.69
 # Also https://github.com/sbernauer/libvnc-rs/commit/2bf903ad64c7e33554b011eb05f96c11eadb8821 to get breakwater to build on NixOS
 vncserver = { git = 'https://github.com/sbernauer/libvnc-rs.git' }
+socket2 = { path = "breakwater-socket2" }
