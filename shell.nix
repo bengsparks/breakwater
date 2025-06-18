@@ -13,17 +13,6 @@ pkgs.mkShell {
     nix-output-monitor
     nixfmt-rfc-style
 
-    # Building the `breakwater` workspace
-    # The `extensions` are required to make vscode plugins work.
-    (pkgs.rust-toolchain.override {
-      extensions = [
-        "clippy"
-        "rust-src"
-      ];
-    })
-    crate2nix
-    nix-prefetch-git
-
     # `https://github.com/sbernauer/libvnc-rs.git`'s `build.rs` invokes pkg-config,
     # so add it here as well if we need to copy commands
     pkg-config

@@ -1,46 +1,74 @@
 {
   pkgs,
-  cargoDotNix ? ./Cargo.nix,
+  craneLib,
   ...
 }:
 let
-  cargoNix = import cargoDotNix {
-    inherit pkgs;
-    buildRustCrateForPkgs =
-      pkgs:
-      pkgs.buildRustCrate.override {
-        defaultCrateOverrides = pkgs.defaultCrateOverrides // {
-          vncserver = attrs: {
-            nativeBuildInputs =
-              (attrs.nativeBuildInputs or [ ])
-              ++ (with pkgs; [
-                pkg-config
-                clang
-              ]);
+  inherit (pkgs) lib;
+  src = craneLib.cleanCargoSource ./.;
 
-            buildInputs =
-              (attrs.buildInputs or [ ])
-              ++ (with pkgs; [
-                libvncserver
-                libvncserver.dev
-              ]);
+  commonArgs = {
+    inherit src;
+    strictDeps = true;
 
-            env = {
-              LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
-              LIBVNCSERVER_HEADER_FILE = "${pkgs.libvncserver.dev}/include/rfb/rfb.h";
-            };
-          };
-        };
-        rustc = pkgs.rust-toolchain;
-        cargo = pkgs.rust-toolchain;
-      };
+    nativeBuildInputs = (
+      with pkgs;
+      [
+        pkg-config
+        clang
+      ]
+    );
+    buildInputs = (
+      with pkgs;
+      [
+        libclang
+        libvncserver
+        libvncserver.dev
+      ]
+    );
+    doCheck = false;
+
+    env.LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
   };
 
-  workspace = cargoNix.workspaceMembers;
+  # Build *just* the cargo dependencies (of the entire workspace),
+  # so we can reuse all of that work (e.g. via cachix) when running in CI
+  # It is *highly* recommended to use something like cargo-hakari to avoid
+  # cache misses when building individual top-level-crates
+  cargoArtifacts = craneLib.buildDepsOnly commonArgs;
 
-  breakwater = workspace.breakwater.build;
+  individualCrateArgs = commonArgs // {
+    inherit cargoArtifacts;
+    inherit (craneLib.crateNameFromCargoToml { inherit src; }) version;
+    doCheck = false;
+  };
 in
 {
-  breakwater-egui = breakwater.override { features = [ "egui" ]; };
-  breakwater-vnc = breakwater.override { features = [ "vnc" ]; };
+  breakwater = craneLib.buildPackage (
+    individualCrateArgs
+    // {
+      pname = "breakwater";
+      cargoExtraArgs = "-p breakwater";
+      src = lib.fileset.toSource {
+        root = ./.;
+        fileset = lib.fileset.unions ([
+          # Cargo files
+          ./Cargo.toml
+          ./Cargo.lock
+          # Workspace members
+          (craneLib.fileset.commonCargoSources ./breakwater-egui-overlay)
+          (craneLib.fileset.commonCargoSources ./breakwater-parser)
+          (craneLib.fileset.commonCargoSources ./breakwater-parser-c-bindings)
+          (craneLib.fileset.commonCargoSources ./breakwater)
+          # Resources included via include_*
+          ./breakwater/src/sinks/egui/canvas.vert
+          ./breakwater/src/sinks/egui/canvas.frag
+          ./breakwater/Arial.ttf
+        ]);
+      };
+
+      CARGO_BUILD_TARGET = "aarch64-unknown-linux-musl";
+      CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
+    }
+  );
 }
