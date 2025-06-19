@@ -2,10 +2,9 @@
   description = "Breakwater with Socket2 patches";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:bengsparks/nixpkgs/libvncserver-tests";
 
-    crate2nix.url = "github:bengsparks/crate2nix";
-    crate2nix.inputs.nixpkgs.follows = "nixpkgs";
+    crane.url = "github:ipetkov/crane";
 
     rust-overlay.url = "github:oxalica/rust-overlay";
     rust-overlay.inputs.nixpkgs.follows = "nixpkgs";
@@ -15,7 +14,7 @@
     {
       self,
       nixpkgs,
-      crate2nix,
+      crane,
       rust-overlay,
       ...
     }@inputs:
@@ -31,16 +30,7 @@
           f {
             pkgs = import nixpkgs {
               inherit system;
-              overlays = [
-                rust-overlay.overlays.default
-
-                # Breakwater requires `nightly` due to `#![feature(portable_simd)]`.
-                # `shell.nix` additionally overrides this to provide
-                # `clippy` and `rust-src` to the developer for `rust-analyzer`
-                (final: prev: {
-                  rust-toolchain = final.rust-bin.selectLatestNightlyWith (toolchain: toolchain.default);
-                })
-              ];
+              overlays = [ rust-overlay.overlays.default ];
             };
           }
         );
@@ -49,17 +39,16 @@
       packages = forEachSupportedSystem (
         { pkgs }:
         let
-          cargoDotNix = crate2nix.tools.${pkgs.system}.generatedCargoNix {
-            name = "breakwater";
-            src = ./.;
-            cargo = pkgs.rust-toolchain;
+          rust = import ./. {
+            inherit (inputs) crane rust-overlay;
+            inherit (pkgs) system;
+            inherit pkgs;
+            buildWithMusl = true;
           };
-          rust = pkgs.callPackage ./. { inherit cargoDotNix; };
         in
         {
-          breakwater-egui = rust.breakwater-egui;
-          breakwater-vnc = rust.breakwater-vnc;
-          socket2 = rust.breakwater-socket2;
+          default = rust.breakwater;
+          lvs = (pkgs.pkgsStatic.pkgsMusl.libvncserver.override { withSystemd = false; });
         }
       );
 
