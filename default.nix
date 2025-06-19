@@ -4,6 +4,9 @@
   ...
 }:
 let
+  pkgsHost = pkgs;
+  pkgsHostStatic = pkgsHost.pkgsStatic;
+
   inherit (pkgs) lib;
   src = craneLib.cleanCargoSource ./.;
 
@@ -19,16 +22,17 @@ let
       ]
     );
     buildInputs = (
-      with pkgs;
+      with pkgs.pkgsMusl;
       [
-        libclang
-        libvncserver
-        libvncserver.dev
+        (libvncserver.override { withSystemd = false; })
       ]
     );
     doCheck = false;
 
     env.LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
+
+    CARGO_BUILD_TARGET = "aarch64-unknown-linux-musl";
+    CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
   };
 
   # Build *just* the cargo dependencies (of the entire workspace),
@@ -58,7 +62,6 @@ in
           # Workspace members
           (craneLib.fileset.commonCargoSources ./breakwater-egui-overlay)
           (craneLib.fileset.commonCargoSources ./breakwater-parser)
-          (craneLib.fileset.commonCargoSources ./breakwater-parser-c-bindings)
           (craneLib.fileset.commonCargoSources ./breakwater)
           # Resources included via include_*
           ./breakwater/src/sinks/egui/canvas.vert
@@ -66,9 +69,6 @@ in
           ./breakwater/Arial.ttf
         ]);
       };
-
-      CARGO_BUILD_TARGET = "aarch64-unknown-linux-musl";
-      CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
     }
   );
 }

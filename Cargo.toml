@@ -3,7 +3,6 @@ members = [
     "breakwater-parser",
     "breakwater",
     "breakwater-egui-overlay",
-    "breakwater-parser-c-bindings"
 ]
 resolver = "2"
 

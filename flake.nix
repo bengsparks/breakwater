@@ -2,7 +2,7 @@
   description = "Breakwater with Socket2 patches";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:bengsparks/nixpkgs/libvncserver";
 
     crane.url = "github:ipetkov/crane";
 
@@ -45,7 +45,7 @@
           # `clippy` and `rust-src` to the developer for `rust-analyzer`
           craneLib = (crane.mkLib pkgs).overrideToolchain (
             p:
-            p.buildPackages.rust-bin.selectLatestNightlyWith (
+            p.pkgsStatic.buildPackages.rust-bin.selectLatestNightlyWith (
               toolchain:
               toolchain.default.override (pre: {
                 targets = pre.targets ++ [ "aarch64-unknown-linux-musl" ];
