@@ -5,34 +5,45 @@
 pkgs.mkShell {
   name = "dev-shell";
 
-  packages = with pkgs; [
-    # Fetching
-    git
+  packages =
+    with pkgs;
+    [
+      # Fetching
+      git
 
-    # Building and formatting nix
-    nix-output-monitor
-    nixfmt-rfc-style
+      # Building and formatting nix
+      nix-output-monitor
+      nixfmt-rfc-style
 
-    # Building the `breakwater` workspace
-    # The `extensions` are required to make vscode plugins work.
-    (rust-toolchain.override {
-      extensions = [
-        "clippy"
-        "rust-src"
-      ];
-    })
-    crate2nix
-    nix-prefetch-git
+      # Building the `breakwater` workspace
+      # The `extensions` are required to make vscode plugins work.
+      (rust-toolchain.override {
+        extensions = [
+          "clippy"
+          "rust-src"
+        ];
+      })
+      crate2nix
+      nix-prefetch-git
 
-    # `https://github.com/sbernauer/libvnc-rs.git`'s `build.rs` invokes pkg-config,
-    # so add it here as well if we need to copy commands
-    pkg-config
+      # `https://github.com/sbernauer/libvnc-rs.git`'s `build.rs` invokes pkg-config,
+      # so add it here as well if we need to copy commands
+      pkg-config
 
-    # Needed for native-display feature
-    wayland
-    libGL
-    libxkbcommon
-  ];
+      # Needed for native-display feature
+      wayland
+      libGL
+      libxkbcommon
+    ]
+    ++ (lib.optionals stdenv.hostPlatform.isLinux (
+      with pkgs;
+      [
+        # linux only vpp tooling
+        (writeShellScriptBin "vppctl" ''
+          ${lib.getExe' vpp "vppctl"}
+        '')
+      ]
+    ));
 
   shellHook =
     ''

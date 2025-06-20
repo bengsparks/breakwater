@@ -17,13 +17,9 @@
       ...
     }@inputs:
     let
-      supportedSystems = [
-        "x86_64-linux"
-        "aarch64-linux"
-      ];
-      forEachSupportedSystem =
-        f:
-        nixpkgs.lib.genAttrs supportedSystems (
+      forEachSystem =
+        systems: f:
+        nixpkgs.lib.genAttrs systems (
           system:
           f {
             pkgs = import nixpkgs {
@@ -43,30 +39,41 @@
         );
     in
     {
-      packages = forEachSupportedSystem (
-        { pkgs }:
-        let
-          cargoDotNix = crate2nix.tools.${pkgs.system}.generatedCargoNix {
-            name = "breakwater";
-            src = ./.;
-            cargo = pkgs.rust-toolchain;
-          };
-          rust = pkgs.callPackage ./. { inherit cargoDotNix; };
-        in
-        {
-          default = rust.breakwater-vnc;
-          breakwater-egui = rust.breakwater-egui;
-          breakwater-vnc = rust.breakwater-vnc;
-          socket2 = rust.breakwater-socket2;
-          vpp = pkgs.vpp;
-        }
-      );
+      packages =
+        forEachSystem
+          [
+            "x86_64-linux"
+            "aarch64-linux"
+          ]
+          (
+            { pkgs }:
+            let
+              cargoDotNix = crate2nix.tools.${pkgs.system}.generatedCargoNix {
+                name = "breakwater";
+                src = ./.;
+                cargo = pkgs.rust-toolchain;
+              };
+              rust = pkgs.callPackage ./. { inherit cargoDotNix; };
+            in
+            {
+              default = rust.breakwater-vnc;
+              socket2 = rust.breakwater-socket2;
+              vpp = pkgs.vpp;
+            }
+          );
 
-      devShells = forEachSupportedSystem (
-        { pkgs }:
-        {
-          default = pkgs.callPackage ./shell.nix { };
-        }
-      );
+      devShells =
+        forEachSystem
+          [
+            "aarch64-darwin"
+            "x86_64-linux"
+            "aarch64-linux"
+          ]
+          (
+            { pkgs }:
+            {
+              default = pkgs.callPackage ./shell.nix { };
+            }
+          );
     };
 }
