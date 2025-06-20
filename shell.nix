@@ -15,7 +15,7 @@ pkgs.mkShell {
 
     # Building the `breakwater` workspace
     # The `extensions` are required to make vscode plugins work.
-    (pkgs.rust-toolchain.override {
+    (rust-toolchain.override {
       extensions = [
         "clippy"
         "rust-src"

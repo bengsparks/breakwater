@@ -2,13 +2,10 @@
   description = "Breakwater with Socket2 patches";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
-
+    nixpkgs.url = "github:bengsparks/nixpkgs/libvncserver";
     crate2nix.url = "github:bengsparks/crate2nix";
     crate2nix.inputs.nixpkgs.follows = "nixpkgs";
-
     rust-overlay.url = "github:oxalica/rust-overlay";
-    rust-overlay.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs =
@@ -57,9 +54,11 @@
           rust = pkgs.callPackage ./. { inherit cargoDotNix; };
         in
         {
+          default = rust.breakwater-vnc;
           breakwater-egui = rust.breakwater-egui;
           breakwater-vnc = rust.breakwater-vnc;
           socket2 = rust.breakwater-socket2;
+          vpp = pkgs.vpp;
         }
       );
 
